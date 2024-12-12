@@ -1,36 +1,18 @@
-/**
-* This file is part of ORB-SLAM3
-*
-* Copyright (C) 2017-2021 Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
-* Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
-*
-* ORB-SLAM3 is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
-* License as published by the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
-* the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with ORB-SLAM3.
-* If not, see <http://www.gnu.org/licenses/>.
-*/
-
-#include <signal.h>
-#include <stdlib.h>
-#include <iostream>
 #include <algorithm>
-#include <fstream>
 #include <chrono>
 #include <ctime>
+#include <fstream>
+#include <iostream>
+#include <signal.h>
 #include <sstream>
+#include <stdlib.h>
 
 #include <condition_variable>
 
 #include <opencv2/core/core.hpp>
 
-#include <librealsense2/rs.hpp>
 #include "librealsense2/rsutil.h"
+#include <librealsense2/rs.hpp>
 
 #include <System.h>
 
@@ -38,18 +20,19 @@ using namespace std;
 
 bool b_continue_session;
 
-void exit_loop_handler(int s){
+void exit_loop_handler(int s) {
     cout << "Finishing session" << endl;
     b_continue_session = false;
-
 }
 
-rs2_vector interpolateMeasure(const double target_time,
-                              const rs2_vector current_data, const double current_time,
-                              const rs2_vector prev_data, const double prev_time);
+rs2_vector interpolateMeasure(
+    const double target_time,
+    const rs2_vector current_data,
+    const double current_time,
+    const rs2_vector prev_data,
+    const double prev_time);
 
-static rs2_option get_sensor_option(const rs2::sensor& sensor)
-{
+static rs2_option get_sensor_option(const rs2::sensor &sensor) {
     // Sensors usually have several options to control their properties
     //  such as Exposure, Brightness etc.
 
@@ -57,31 +40,27 @@ static rs2_option get_sensor_option(const rs2::sensor& sensor)
 
     // The following loop shows how to iterate over all available options
     // Starting from 0 until RS2_OPTION_COUNT (exclusive)
-    for (int i = 0; i < static_cast<int>(RS2_OPTION_COUNT); i++)
-    {
+    for (int i = 0; i < static_cast<int>(RS2_OPTION_COUNT); i++) {
         rs2_option option_type = static_cast<rs2_option>(i);
-        //SDK enum types can be streamed to get a string that represents them
+        // SDK enum types can be streamed to get a string that represents them
         std::cout << "  " << i << ": " << option_type;
 
         // To control an option, use the following api:
 
         // First, verify that the sensor actually supports this option
-        if (sensor.supports(option_type))
-        {
+        if (sensor.supports(option_type)) {
             std::cout << std::endl;
 
             // Get a human readable description of the option
-            const char* description = sensor.get_option_description(option_type);
+            const char *description = sensor.get_option_description(option_type);
             std::cout << "       Description   : " << description << std::endl;
 
             // Get the current value of the option
             float current_value = sensor.get_option(option_type);
             std::cout << "       Current Value : " << current_value << std::endl;
 
-            //To change the value of an option, please follow the change_sensor_option() function
-        }
-        else
-        {
+            // To change the value of an option, please follow the change_sensor_option() function
+        } else {
             std::cout << " is not supported" << std::endl;
         }
     }
@@ -94,7 +73,8 @@ int main(int argc, char **argv) {
 
     if (argc < 3 || argc > 4) {
         cerr << endl
-             << "Usage: ./mono_realsense_D435i path_to_vocabulary path_to_settings (trajectory_file_name)"
+             << "Usage: ./mono_realsense_D435i path_to_vocabulary path_to_settings "
+                "(trajectory_file_name)"
              << endl;
         return 1;
     }
@@ -119,12 +99,10 @@ int main(int argc, char **argv) {
     rs2::context ctx;
     rs2::device_list devices = ctx.query_devices();
     rs2::device selected_device;
-    if (devices.size() == 0)
-    {
+    if (devices.size() == 0) {
         std::cerr << "No device connected, please connect a RealSense device" << std::endl;
         return 0;
-    }
-    else
+    } else
         selected_device = devices[0];
 
     std::vector<rs2::sensor> sensors = selected_device.query_sensors();
@@ -135,14 +113,15 @@ int main(int argc, char **argv) {
             ++index;
             if (index == 1) {
                 sensor.set_option(RS2_OPTION_ENABLE_AUTO_EXPOSURE, 1);
-                sensor.set_option(RS2_OPTION_AUTO_EXPOSURE_LIMIT,5000);
+                sensor.set_option(RS2_OPTION_AUTO_EXPOSURE_LIMIT, 5000);
                 sensor.set_option(RS2_OPTION_EMITTER_ENABLED, 0); // switch off emitter
             }
-            // std::cout << "  " << index << " : " << sensor.get_info(RS2_CAMERA_INFO_NAME) << std::endl;
+            // std::cout << "  " << index << " : " << sensor.get_info(RS2_CAMERA_INFO_NAME) <<
+            // std::endl;
             get_sensor_option(sensor);
-            if (index == 2){
+            if (index == 2) {
                 // RGB camera (not used here...)
-                sensor.set_option(RS2_OPTION_EXPOSURE,100.f);
+                sensor.set_option(RS2_OPTION_EXPOSURE, 100.f);
             }
         }
 
@@ -162,25 +141,27 @@ int main(int argc, char **argv) {
     bool image_ready = false;
     int count_im_buffer = 0; // count dropped frames
 
-    auto imu_callback = [&](const rs2::frame& frame)
-    {
+    auto imu_callback = [&](const rs2::frame &frame) {
         std::unique_lock<std::mutex> lock(imu_mutex);
 
-        if(rs2::frameset fs = frame.as<rs2::frameset>())
-        {
+        if (rs2::frameset fs = frame.as<rs2::frameset>()) {
             count_im_buffer++;
 
-            double new_timestamp_image = fs.get_timestamp()*1e-3;
-            if(abs(timestamp_image-new_timestamp_image)<0.001){
+            double new_timestamp_image = fs.get_timestamp() * 1e-3;
+            if (abs(timestamp_image - new_timestamp_image) < 0.001) {
                 // cout << "Two frames with the same timeStamp!!!\n";
                 count_im_buffer--;
                 return;
             }
 
             rs2::video_frame ir_frameL = fs.get_infrared_frame(1);
-            imCV = cv::Mat(cv::Size(width_img, height_img), CV_8U, (void*)(ir_frameL.get_data()), cv::Mat::AUTO_STEP);
+            imCV = cv::Mat(
+                cv::Size(width_img, height_img),
+                CV_8U,
+                (void *)(ir_frameL.get_data()),
+                cv::Mat::AUTO_STEP);
 
-            timestamp_image = fs.get_timestamp()*1e-3;
+            timestamp_image = fs.get_timestamp() * 1e-3;
             image_ready = true;
 
             lock.unlock();
@@ -202,12 +183,13 @@ int main(int argc, char **argv) {
     std::cout << " cy = " << intrinsics_left.ppy << std::endl;
     std::cout << " height = " << intrinsics_left.height << std::endl;
     std::cout << " width = " << intrinsics_left.width << std::endl;
-    std::cout << " Coeff = " << intrinsics_left.coeffs[0] << ", " << intrinsics_left.coeffs[1] << ", " <<
-        intrinsics_left.coeffs[2] << ", " << intrinsics_left.coeffs[3] << ", " << intrinsics_left.coeffs[4] << ", " << std::endl;
+    std::cout << " Coeff = " << intrinsics_left.coeffs[0] << ", " << intrinsics_left.coeffs[1]
+              << ", " << intrinsics_left.coeffs[2] << ", " << intrinsics_left.coeffs[3] << ", "
+              << intrinsics_left.coeffs[4] << ", " << std::endl;
     std::cout << " Model = " << intrinsics_left.model << std::endl;
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::MONOCULAR, true, 0, file_name);
+    ORB_SLAM3::System SLAM(argv[1], argv[2], ORB_SLAM3::System::MONOCULAR, true, 0, file_name);
     float imageScale = SLAM.GetImageScale();
 
     double timestamp;
@@ -216,8 +198,7 @@ int main(int argc, char **argv) {
     double t_resize = 0.f;
     double t_track = 0.f;
 
-    while (!SLAM.isShutDown())
-    {
+    while (!SLAM.isShutDown()) {
         std::vector<rs2_vector> vGyro;
         std::vector<double> vGyro_times;
         std::vector<rs2_vector> vAccel;
@@ -225,17 +206,19 @@ int main(int argc, char **argv) {
 
         {
             std::unique_lock<std::mutex> lk(imu_mutex);
-            if(!image_ready)
+            if (!image_ready)
                 cond_image_rec.wait(lk);
 
 #ifdef COMPILEDWITHC11
-            std::chrono::steady_clock::time_point time_Start_Process = std::chrono::steady_clock::now();
+            std::chrono::steady_clock::time_point time_Start_Process =
+                std::chrono::steady_clock::now();
 #else
-            std::chrono::steady_clock::time_point time_Start_Process = std::chrono::steady_clock::now();
+            std::chrono::steady_clock::time_point time_Start_Process =
+                std::chrono::steady_clock::now();
 #endif
 
-            if(count_im_buffer>1)
-                cout << count_im_buffer -1 << " dropped frs\n";
+            if (count_im_buffer > 1)
+                cout << count_im_buffer - 1 << " dropped frs\n";
             count_im_buffer = 0;
 
             timestamp = timestamp_image;
@@ -244,46 +227,51 @@ int main(int argc, char **argv) {
             image_ready = false;
         }
 
-        if(imageScale != 1.f)
-        {
+        if (imageScale != 1.f) {
 #ifdef REGISTER_TIMES
-    #ifdef COMPILEDWITHC11
-            std::chrono::steady_clock::time_point t_Start_Resize = std::chrono::steady_clock::now();
-    #else
-            std::chrono::steady_clock::time_point t_Start_Resize = std::chrono::steady_clock::now();
-    #endif
+#ifdef COMPILEDWITHC11
+            std::chrono::steady_clock::time_point t_Start_Resize =
+                std::chrono::steady_clock::now();
+#else
+            std::chrono::steady_clock::time_point t_Start_Resize =
+                std::chrono::steady_clock::now();
+#endif
 #endif
             int width = im.cols * imageScale;
             int height = im.rows * imageScale;
             cv::resize(im, im, cv::Size(width, height));
 
 #ifdef REGISTER_TIMES
-    #ifdef COMPILEDWITHC11
+#ifdef COMPILEDWITHC11
             std::chrono::steady_clock::time_point t_End_Resize = std::chrono::steady_clock::now();
-    #else
+#else
             std::chrono::steady_clock::time_point t_End_Resize = std::chrono::steady_clock::now();
-    #endif
-            t_resize = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t_End_Resize - t_Start_Resize).count();
+#endif
+            t_resize = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
+                           t_End_Resize - t_Start_Resize)
+                           .count();
             SLAM.InsertResizeTime(t_resize);
 #endif
         }
 
 #ifdef REGISTER_TIMES
-    #ifdef COMPILEDWITHC11
+#ifdef COMPILEDWITHC11
         std::chrono::steady_clock::time_point t_Start_Track = std::chrono::steady_clock::now();
-    #else
+#else
         std::chrono::steady_clock::time_point t_Start_Track = std::chrono::steady_clock::now();
-    #endif
+#endif
 #endif
         // Stereo images are already rectified.
         SLAM.TrackMonocular(im, timestamp);
 #ifdef REGISTER_TIMES
-    #ifdef COMPILEDWITHC11
+#ifdef COMPILEDWITHC11
         std::chrono::steady_clock::time_point t_End_Track = std::chrono::steady_clock::now();
-    #else
+#else
         std::chrono::steady_clock::time_point t_End_Track = std::chrono::steady_clock::now();
-    #endif
-        t_track = t_resize + std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t_End_Track - t_Start_Track).count();
+#endif
+        t_track = t_resize + std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
+                                 t_End_Track - t_Start_Track)
+                                 .count();
         SLAM.InsertTrackTime(t_track);
 #endif
     }
