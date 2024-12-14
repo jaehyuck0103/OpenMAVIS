@@ -1415,7 +1415,6 @@ Sophus::SE3f Tracking::GrabImageMulti(
     const cv::Mat &imRectSideRight,
     const double &timestamp,
     string filename) {
-    // cout << "GrabImageStereo" << endl;
 
     mImGray = imRectLeft;
     cv::Mat imGrayRight = imRectRight;
@@ -1454,35 +1453,34 @@ Sophus::SE3f Tracking::GrabImageMulti(
         }
     }
 
-    if (mSensor == System::IMU_MULTI)
-        mCurrentFrame = Frame(
-            mImGray,
-            imGrayRight,
-            imGraySideLeft,
-            imGraySideRight,
-            timestamp,
-            mpORBextractorLeft,
-            mpORBextractorRight,
-            mpORBextractorSideLeft,
-            mpORBextractorSideRight,
-            mbleft,
-            mbright,
-            mbsideleft,
-            mbsideright,
-            mpORBVocabulary,
-            mK,
-            mDistCoef,
-            mbf,
-            mThDepth,
-            mpCamera,
-            mpCamera2,
-            mpCamera3,
-            mpCamera4,
-            mTlr,
-            mTlsl,
-            mTlsr,
-            &mLastFrame,
-            *mpImuCalib);
+    mCurrentFrame = Frame(
+        mImGray,
+        imGrayRight,
+        imGraySideLeft,
+        imGraySideRight,
+        timestamp,
+        mpORBextractorLeft,
+        mpORBextractorRight,
+        mpORBextractorSideLeft,
+        mpORBextractorSideRight,
+        mbleft,
+        mbright,
+        mbsideleft,
+        mbsideright,
+        mpORBVocabulary,
+        mK,
+        mDistCoef,
+        mbf,
+        mThDepth,
+        mpCamera,
+        mpCamera2,
+        mpCamera3,
+        mpCamera4,
+        mTlr,
+        mTlsl,
+        mTlsr,
+        &mLastFrame,
+        *mpImuCalib);
 
     mCurrentFrame.mNameFile = filename;
     mCurrentFrame.mnDataset = mnNumDataset;
@@ -1871,18 +1869,7 @@ void Tracking::Track() {
     if ((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO ||
          mSensor == System::IMU_RGBD || mSensor == System::IMU_MULTI) &&
         !mbCreatedMap) {
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point time_StartPreIMU = std::chrono::steady_clock::now();
-#endif
         PreintegrateIMU();
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point time_EndPreIMU = std::chrono::steady_clock::now();
-
-        double timePreImu = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-                                time_EndPreIMU - time_StartPreIMU)
-                                .count();
-        vdIMUInteg_ms.push_back(timePreImu);
-#endif
     }
     mbCreatedMap = false;
 
@@ -1906,7 +1893,6 @@ void Tracking::Track() {
             MultiInitialization();
         else
             MonocularInitialization();
-        // mpFrameDrawer->Update(this);
 
         if (mState != OK) // If rightly initialized, mState=OK
         {
@@ -1921,20 +1907,13 @@ void Tracking::Track() {
         // System is initialized. Track Frame.
         bool bOK;
 
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point time_StartPosePred =
-            std::chrono::steady_clock::now();
-#endif
-
         // Initial camera pose estimation using motion model or relocalization (if tracking is
         // lost)
         if (!mbOnlyTracking) {
-
             // State OK
             // Local Mapping is activated. This is the normal behaviour, unless
             // you explicitly activate the "only tracking" mode.
             if (mState == OK) {
-
                 // Local Mapping might have changed some MapPoints tracked in last frame
                 CheckReplacedInLastFrame();
 
@@ -1947,8 +1926,9 @@ void Tracking::Track() {
                 } else {
                     Verbose::PrintMess("TRACK: Track with motion model", Verbose::VERBOSITY_DEBUG);
                     bOK = TrackWithMotionModel();
-                    if (!bOK)
+                    if (!bOK) {
                         bOK = TrackReferenceKeyFrame();
+                    }
                 }
 
                 if (!bOK) {
@@ -1965,6 +1945,7 @@ void Tracking::Track() {
                     }
                 }
             } else {
+                std::cout << "mState!=OK" << std::endl;
 
                 if (mState == RECENTLY_LOST) {
                     Verbose::PrintMess("Lost for a short time", Verbose::VERBOSITY_NORMAL);
@@ -2074,19 +2055,6 @@ void Tracking::Track() {
         if (!mCurrentFrame.mpReferenceKF)
             mCurrentFrame.mpReferenceKF = mpReferenceKF;
 
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point time_EndPosePred = std::chrono::steady_clock::now();
-
-        double timePosePred =
-            std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-                time_EndPosePred - time_StartPosePred)
-                .count();
-        vdPosePred_ms.push_back(timePosePred);
-#endif
-
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point time_StartLMTrack = std::chrono::steady_clock::now();
-#endif
         // If we have an initial estimation of the camera pose and matching. Track the local map.
         if (!mbOnlyTracking) {
             if (bOK) {
@@ -2154,15 +2122,6 @@ void Tracking::Track() {
                     mLastBias = mCurrentFrame.mImuBias;
             }
         }
-
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point time_EndLMTrack = std::chrono::steady_clock::now();
-
-        double timeLMTrack = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-                                 time_EndLMTrack - time_StartLMTrack)
-                                 .count();
-        vdLMTrack_ms.push_back(timeLMTrack);
-#endif
 
         // Update drawer
         mpFrameDrawer->Update(this);
@@ -2986,9 +2945,9 @@ bool Tracking::TrackLocalMap() {
         }
 
     int inliers;
-    if (!mpAtlas->isImuInitialized())
+    if (!mpAtlas->isImuInitialized()) {
         Optimizer::PoseOptimization(&mCurrentFrame);
-    else {
+    } else {
         if (mCurrentFrame.mnId <= mnLastRelocFrameId + mnFramesToResetIMU) {
             Verbose::PrintMess("TLM: PoseOptimization ", Verbose::VERBOSITY_DEBUG);
             Optimizer::PoseOptimization(&mCurrentFrame);

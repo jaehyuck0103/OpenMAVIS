@@ -97,8 +97,6 @@ System::System(
 
     mStrVocabularyFilePath = strVocFile;
 
-    bool loadedAtlas = false;
-
     if (mStrLoadAtlasFromFile.empty()) {
         // Load ORB Vocabulary
         cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;
@@ -146,20 +144,6 @@ System::System(
                  << endl;
             exit(-1);
         }
-        // mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
-
-        // cout << "KF in DB: " << mpKeyFrameDatabase->mnNumKFs << "; words: " <<
-        // mpKeyFrameDatabase->mnNumWords << endl;
-
-        loadedAtlas = true;
-
-        //        mpAtlas->CreateNewMap();
-
-        // clock_t timeElapsed = clock() - start;
-        // unsigned msElapsed = timeElapsed / (CLOCKS_PER_SEC / 1000);
-        // cout << "Binary file read in " << msElapsed << " ms" << endl;
-
-        // usleep(10*1000*1000);
     }
 
     if (mSensor == IMU_STEREO || mSensor == IMU_MONOCULAR || mSensor == IMU_RGBD ||
@@ -229,9 +213,7 @@ System::System(
     // usleep(10*1000*1000);
 
     // Initialize the Viewer thread and launch
-    if (bUseViewer)
-    // if(false) // TODO
-    {
+    if (bUseViewer) {
         mpViewer =
             new Viewer(this, mpFrameDrawer, mpMapDrawer, mpTracker, strSettingsFile, settings_);
         mptViewer = new thread(&Viewer::Run, mpViewer);

@@ -1,15 +1,12 @@
-#include <algorithm>
 #include <chrono>
 #include <ctime>
 #include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <sstream>
 
 #include <opencv2/core/core.hpp>
 
 #include "ImuTypes.h"
-#include "Optimizer.h"
 #include <System.h>
 
 using namespace std;
@@ -82,11 +79,11 @@ int main(int argc, char **argv) {
         string pathSeq(argv[(2 * seq) + 3]);
         string pathTimeStamps(argv[(2 * seq) + 4]);
 
-        string pathCam0 = pathSeq + "/mav0/cam1/data"; // Left Camera
-        string pathCam1 = pathSeq + "/mav0/cam0/data"; // Right Camera
-        string pathCam2 = pathSeq + "/mav0/cam4/data"; // SideLeft Camera
-        string pathCam3 = pathSeq + "/mav0/cam3/data"; // Sideright Camera
-        string pathImu = pathSeq + "/mav0/imu0/data.csv";
+        string pathCam0 = pathSeq + "/cam1/Zero_DCE_PLUS"; // Left Camera
+        string pathCam1 = pathSeq + "/cam0/Zero_DCE_PLUS"; // Right Camera
+        string pathCam2 = pathSeq + "/cam4/Zero_DCE_PLUS"; // SideLeft Camera
+        string pathCam3 = pathSeq + "/cam3/Zero_DCE_PLUS"; // Sideright Camera
+        string pathImu = pathSeq + "/imu0/data.csv";
         LoadImages(
             pathCam0,
             pathCam1,
@@ -114,7 +111,6 @@ int main(int argc, char **argv) {
         }
 
         // Find first imu to be considered, supposing imu measurements start first
-
         while (vTimestampsImu[seq][first_imu[seq]] <= vTimestampsCam[seq][0])
             first_imu[seq]++;
         first_imu[seq]--; // first imu measurement to be considered
@@ -136,15 +132,12 @@ int main(int argc, char **argv) {
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     ORB_SLAM3::System SLAM(argv[1], argv[2], ORB_SLAM3::System::IMU_MULTI, true);
+    ORB_SLAM3::Verbose::SetTh(ORB_SLAM3::Verbose::VERBOSITY_DEBUG);
 
     cv::Mat imLeft, imRight, imSideLeft, imSideRight;
     for (seq = 0; seq < num_seq; seq++) {
         // Seq loop
         vector<ORB_SLAM3::IMU::Point> vImuMeas;
-        double t_rect = 0.f;
-        double t_resize = 0.f;
-        double t_track = 0.f;
-        int num_rect = 0;
         int proccIm = 0;
         for (int ni = 0; ni < nImages[seq]; ni++, proccIm++) {
             // Read left and right images from file
@@ -183,10 +176,7 @@ int main(int argc, char **argv) {
             vImuMeas.clear();
 
             if (ni > 0)
-                while (vTimestampsImu[seq][first_imu[seq]] <=
-                       vTimestampsCam[seq]
-                                     [ni]) // while(vTimestampsImu[first_imu]<=vTimestampsCam[ni])
-                {
+                while (vTimestampsImu[seq][first_imu[seq]] <= vTimestampsCam[seq][ni]) {
                     vImuMeas.push_back(
                         ORB_SLAM3::IMU::Point(
                             vAcc[seq][first_imu[seq]].x,
@@ -199,29 +189,13 @@ int main(int argc, char **argv) {
                     first_imu[seq]++;
                 }
 
-#ifdef COMPILEDWITHC11
             std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
-#else
-            std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
-#endif
 
             // Pass the images to the SLAM system
             Sophus::SE3f Twb =
                 SLAM.TrackMulti(imLeft, imRight, imSideLeft, imSideRight, tframe, vImuMeas);
 
-#ifdef COMPILEDWITHC11
             std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
-#else
-            std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
-#endif
-
-#ifdef REGISTER_TIMES
-            t_track =
-                t_rect + t_resize +
-                std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(t2 - t1)
-                    .count();
-            SLAM.InsertTrackTime(t_track);
-#endif
 
             double ttrack =
                 std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count();
