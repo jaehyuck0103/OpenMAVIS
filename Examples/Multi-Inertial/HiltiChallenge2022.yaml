@@ -55,6 +55,62 @@ Camera4.k2: -0.00012037903855186935
 Camera4.k3: -0.0011713947305290857
 Camera4.k4: 4.0049266665953e-05
 
+# Left Camera calibration and distortion parameters (OpenCV)
+Camera5.fx: 270.02303234856095
+Camera5.fy: 270.1835768112419
+Camera5.cx: 329.4142416129381
+Camera5.cy: 270.88581184133295
+
+# Kannala-Brandt distortion parameters
+Camera5.k1: 0.0
+Camera5.k2: 0.0
+Camera5.k3: 0.0
+Camera5.k4: 0.0
+Camera5.p1: 0.0
+Camera5.p2: 0.0
+
+# Right Camera calibration and distortion parameters (OpenCV)
+Camera6.fx: 269.4623029196118
+Camera6.fy: 269.59819519171515
+Camera6.cx: 379.8232430371514
+Camera6.cy: 245.21372784291526
+
+# Kannala-Brandt distortion parameters
+Camera6.k1: 0.0
+Camera6.k2: 0.0
+Camera6.k3: 0.0
+Camera6.k4: 0.0
+Camera6.p1: 0.0
+Camera6.p2: 0.0
+
+# Side-Left Camera calibration and distortion parameters (OpenCV)
+Camera7.fx: 269.20586464387964
+Camera7.fy: 269.3916140178974
+Camera7.cx: 316.2038697613719
+Camera7.cy: 254.46723718665538
+
+# KannalaBrandt8 distortion parameters
+Camera7.k1: 0.0
+Camera7.k2: 0.0
+Camera7.k3: 0.0
+Camera7.k4: 0.0
+Camera7.p1: 0.0
+Camera7.p2: 0.0
+
+# Side-Right Camera calibration and distortion parameters (OpenCV)
+Camera8.fx: 271.3985196116684
+Camera8.fy: 271.6883289889534
+Camera8.cx: 369.7572895040207
+Camera8.cy: 264.14176194482036
+
+# KannalaBrandt8 distortion parameters
+Camera8.k1: 0.0
+Camera8.k2: 0.0
+Camera8.k3: 0.0
+Camera8.k4: 0.0
+Camera8.p1: 0.0
+Camera8.p2: 0.0
+
 # Transformation matrix from right camera to left camera
 Stereo.T_c1_c2: !!opencv-matrix
   rows: 4
@@ -77,6 +133,18 @@ Camera3.overlappingEnd: 720
 
 Camera4.overlappingBegin: 0   #Right and Side Right
 Camera4.overlappingEnd: 720
+
+Camera5.overlappingBegin: 0
+Camera5.overlappingEnd: 720
+
+Camera6.overlappingBegin: 0
+Camera6.overlappingEnd: 720
+
+Camera7.overlappingBegin: 0   #Left and Side Left
+Camera7.overlappingEnd: 720
+
+Camera8.overlappingBegin: 0   #Right and Side Right
+Camera8.overlappingEnd: 720
 
 # Camera resolution
 Camera.width: 720

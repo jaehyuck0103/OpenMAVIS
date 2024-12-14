@@ -51,11 +51,6 @@ class Tracking {
 
     ~Tracking();
 
-    // Parse the config file
-    bool ParseCamParamFile(cv::FileStorage &fSettings);
-    bool ParseORBParamFile(cv::FileStorage &fSettings);
-    bool ParseIMUParamFile(cv::FileStorage &fSettings);
-
     // Preprocess the input and call Track(). Extract features and performs stereo matching.
     Sophus::SE3f GrabImageStereo(
         const cv::Mat &imRectLeft,
@@ -69,10 +64,18 @@ class Tracking {
         string filename);
     Sophus::SE3f GrabImageMonocular(const cv::Mat &im, const double &timestamp, string filename);
     Sophus::SE3f GrabImageMulti(
-        const cv::Mat &imRectLeft,
-        const cv::Mat &imRectRight,
-        const cv::Mat &imRectSideLeft,
-        const cv::Mat &imRectSideRight,
+        const cv::Mat &imLeft,
+        const cv::Mat &imRight,
+        const cv::Mat &imSideLeft,
+        const cv::Mat &imSideRight,
+        const cv::Mat &imLeft2,
+        const cv::Mat &imRight2,
+        const cv::Mat &imSideLeft2,
+        const cv::Mat &imSideRight2,
+        const cv::Mat &depthLeft2,
+        const cv::Mat &depthRight2,
+        const cv::Mat &depthSideLeft2,
+        const cv::Mat &depthSideRight2,
         const double &timestamp,
         string filename);
 
@@ -166,6 +169,7 @@ class Tracking {
     void ResetActiveMap(bool bLocMap = false);
 
     bool mbleft{true}, mbright{true}, mbsideleft{true}, mbsideright{true};
+    bool mbleft2{true}, mbright2{true}, mbsideleft2{true}, mbsideright2{true};
 
     float mMeanTrack;
     bool mbInitWith3KFs;
@@ -177,22 +181,6 @@ class Tracking {
     vector<MapPoint *> GetLocalMapMPS();
 
     bool mbWriteStats;
-
-#ifdef REGISTER_TIMES
-    void LocalMapStats2File();
-    void TrackStats2File();
-    void PrintTimeStats();
-
-    vector<double> vdRectStereo_ms;
-    vector<double> vdResizeImage_ms;
-    vector<double> vdORBExtract_ms;
-    vector<double> vdStereoMatch_ms;
-    vector<double> vdIMUInteg_ms;
-    vector<double> vdPosePred_ms;
-    vector<double> vdLMTrack_ms;
-    vector<double> vdNewKF_ms;
-    vector<double> vdTrackTotal_ms;
-#endif
 
   protected:
     // Main tracking function. It is independent of the input sensor.
@@ -264,6 +252,8 @@ class Tracking {
     // ORB
     ORBextractor *mpORBextractorLeft, *mpORBextractorRight;
     ORBextractor *mpORBextractorSideLeft, *mpORBextractorSideRight;
+    ORBextractor *mpORBextractorLeft2, *mpORBextractorRight2;
+    ORBextractor *mpORBextractorSideLeft2, *mpORBextractorSideRight2;
     ORBextractor *mpIniORBextractor;
 
     // BoW
@@ -356,6 +346,8 @@ class Tracking {
 
     GeometricCamera *mpCamera, *mpCamera2;
     GeometricCamera *mpCamera3, *mpCamera4;
+    GeometricCamera *mpCamera5, *mpCamera6;
+    GeometricCamera *mpCamera7, *mpCamera8;
 
     int initID, lastID;
 
@@ -376,6 +368,7 @@ class Tracking {
 
   public:
     cv::Mat mImLeft, mImRight, mImSideLeft, mImSideRight;
+    cv::Mat mImLeft2, mImRight2, mImSideLeft2, mImSideRight2;
 };
 
 } // namespace ORB_SLAM3

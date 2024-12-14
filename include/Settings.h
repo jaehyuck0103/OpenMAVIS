@@ -47,19 +47,16 @@ class Settings {
     GeometricCamera *camera2() { return calibration2_; }
     GeometricCamera *camera3() { return calibration3_; }
     GeometricCamera *camera4() { return calibration4_; }
+    GeometricCamera *camera5() { return calibration5_; }
+    GeometricCamera *camera6() { return calibration6_; }
+    GeometricCamera *camera7() { return calibration7_; }
+    GeometricCamera *camera8() { return calibration8_; }
     cv::Mat camera1DistortionCoef() {
         return cv::Mat(vPinHoleDistorsion1_.size(), 1, CV_32F, vPinHoleDistorsion1_.data());
     }
     cv::Mat camera2DistortionCoef() {
         return cv::Mat(vPinHoleDistorsion2_.size(), 1, CV_32F, vPinHoleDistorsion2_.data());
     }
-    cv::Mat camera3DistortionCoef() {
-        return cv::Mat(vPinHoleDistorsion3_.size(), 1, CV_32F, vPinHoleDistorsion3_.data());
-    }
-    cv::Mat camera4DistortionCoef() {
-        return cv::Mat(vPinHoleDistorsion4_.size(), 1, CV_32F, vPinHoleDistorsion4_.data());
-    }
-
     Sophus::SE3f Tlr() { return Tlr_; }
     Sophus::SE3f Tsl() { return Tsl_; }
     Sophus::SE3f Tsr() { return Tsr_; }
@@ -148,6 +145,10 @@ class Settings {
     void readCamera2(cv::FileStorage &fSettings);
     void readCamera3(cv::FileStorage &fSettings);
     void readCamera4(cv::FileStorage &fSettings);
+    void readCamera5(cv::FileStorage &fSettings);
+    void readCamera6(cv::FileStorage &fSettings);
+    void readCamera7(cv::FileStorage &fSettings);
+    void readCamera8(cv::FileStorage &fSettings);
     void readImageInfo(cv::FileStorage &fSettings);
     void readIMU(cv::FileStorage &fSettings);
     void readRGBD(cv::FileStorage &fSettings);
@@ -165,6 +166,7 @@ class Settings {
      * Visual stuff
      */
     GeometricCamera *calibration1_, *calibration2_, *calibration3_, *calibration4_;
+    GeometricCamera *calibration5_, *calibration6_, *calibration7_, *calibration8_;
     GeometricCamera *originalCalib1_, *originalCalib2_, *originalCalib3_, *originalCalib4_;
     std::vector<float> vPinHoleDistorsion1_, vPinHoleDistorsion2_, vPinHoleDistorsion3_,
         vPinHoleDistorsion4_;

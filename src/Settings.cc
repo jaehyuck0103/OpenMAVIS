@@ -144,7 +144,11 @@ Settings::Settings(const std::string &configFile, const int &sensor)
     if (sensor_ == System::IMU_MULTI) {
         readCamera3(fSettings);
         readCamera4(fSettings);
-        cout << "\t-Loaded camera 3 & 4" << endl;
+        readCamera5(fSettings);
+        readCamera6(fSettings);
+        readCamera7(fSettings);
+        readCamera8(fSettings);
+        cout << "\t-Loaded camera 3 & 4 & 5 & 6 & 7 & 8" << endl;
     }
 
     // Read image info
@@ -487,8 +491,190 @@ void Settings::readCamera4(cv::FileStorage &fSettings) {
     thDepth_ = readParameter<float>(fSettings, "Stereo.ThDepth", found);
 }
 
-void Settings::readImageInfo(cv::FileStorage &fSettings) {
+void Settings::readCamera5(cv::FileStorage &fSettings) {
     bool found;
+    vector<float> vCalibration;
+    if (cameraType_ == PinHole) {
+        // Read intrinsic parameters
+        float fx = readParameter<float>(fSettings, "Camera5.fx", found);
+        float fy = readParameter<float>(fSettings, "Camera5.fy", found);
+        float cx = readParameter<float>(fSettings, "Camera5.cx", found);
+        float cy = readParameter<float>(fSettings, "Camera5.cy", found);
+
+        vCalibration = {fx, fy, cx, cy};
+
+        calibration5_ = new Pinhole(vCalibration);
+        // originalCalib5_ = new Pinhole(vCalibration);
+
+        int colBegin = readParameter<int>(fSettings, "Camera5.overlappingBegin", found);
+        int colEnd = readParameter<int>(fSettings, "Camera5.overlappingEnd", found);
+        vector<int> vOverlapping = {colBegin, colEnd};
+
+        static_cast<KannalaBrandt8 *>(calibration5_)->mvLappingArea = vOverlapping;
+    } else if (cameraType_ == KannalaBrandt) {
+        // Read intrinsic parameters
+        float fx = readParameter<float>(fSettings, "Camera5.fx", found);
+        float fy = readParameter<float>(fSettings, "Camera5.fy", found);
+        float cx = readParameter<float>(fSettings, "Camera5.cx", found);
+        float cy = readParameter<float>(fSettings, "Camera5.cy", found);
+
+        float k0 = readParameter<float>(fSettings, "Camera5.k1", found);
+        float k1 = readParameter<float>(fSettings, "Camera5.k2", found);
+        float k2 = readParameter<float>(fSettings, "Camera5.k3", found);
+        float k3 = readParameter<float>(fSettings, "Camera5.k4", found);
+
+        vCalibration = {fx, fy, cx, cy, k0, k1, k2, k3};
+
+        calibration5_ = new KannalaBrandt8(vCalibration);
+        // originalCalib5_ = new KannalaBrandt8(vCalibration);
+
+        int colBegin = readParameter<int>(fSettings, "Camera5.overlappingBegin", found);
+        int colEnd = readParameter<int>(fSettings, "Camera5.overlappingEnd", found);
+        vector<int> vOverlapping = {colBegin, colEnd};
+
+        static_cast<KannalaBrandt8 *>(calibration5_)->mvLappingArea = vOverlapping;
+    }
+}
+
+void Settings::readCamera6(cv::FileStorage &fSettings) {
+    bool found;
+    vector<float> vCalibration;
+    if (cameraType_ == PinHole) {
+        // Read intrinsic parameters
+        float fx = readParameter<float>(fSettings, "Camera6.fx", found);
+        float fy = readParameter<float>(fSettings, "Camera6.fy", found);
+        float cx = readParameter<float>(fSettings, "Camera6.cx", found);
+        float cy = readParameter<float>(fSettings, "Camera6.cy", found);
+
+        vCalibration = {fx, fy, cx, cy};
+
+        calibration6_ = new Pinhole(vCalibration);
+        // originalCalib6_ = new Pinhole(vCalibration);
+
+        int colBegin = readParameter<int>(fSettings, "Camera6.overlappingBegin", found);
+        int colEnd = readParameter<int>(fSettings, "Camera6.overlappingEnd", found);
+        vector<int> vOverlapping = {colBegin, colEnd};
+
+        static_cast<KannalaBrandt8 *>(calibration6_)->mvLappingArea = vOverlapping;
+    } else if (cameraType_ == KannalaBrandt) {
+        // Read intrinsic parameters
+        float fx = readParameter<float>(fSettings, "Camera6.fx", found);
+        float fy = readParameter<float>(fSettings, "Camera6.fy", found);
+        float cx = readParameter<float>(fSettings, "Camera6.cx", found);
+        float cy = readParameter<float>(fSettings, "Camera6.cy", found);
+
+        float k0 = readParameter<float>(fSettings, "Camera6.k1", found);
+        float k1 = readParameter<float>(fSettings, "Camera6.k2", found);
+        float k2 = readParameter<float>(fSettings, "Camera6.k3", found);
+        float k3 = readParameter<float>(fSettings, "Camera6.k4", found);
+
+        vCalibration = {fx, fy, cx, cy, k0, k1, k2, k3};
+
+        calibration6_ = new KannalaBrandt8(vCalibration);
+        // originalCalib6_ = new KannalaBrandt8(vCalibration);
+
+        int colBegin = readParameter<int>(fSettings, "Camera6.overlappingBegin", found);
+        int colEnd = readParameter<int>(fSettings, "Camera6.overlappingEnd", found);
+        vector<int> vOverlapping = {colBegin, colEnd};
+
+        static_cast<KannalaBrandt8 *>(calibration6_)->mvLappingArea = vOverlapping;
+    }
+}
+
+void Settings::readCamera7(cv::FileStorage &fSettings) {
+    bool found;
+    vector<float> vCalibration;
+    if (cameraType_ == PinHole) {
+        // Read intrinsic parameters
+        float fx = readParameter<float>(fSettings, "Camera7.fx", found);
+        float fy = readParameter<float>(fSettings, "Camera7.fy", found);
+        float cx = readParameter<float>(fSettings, "Camera7.cx", found);
+        float cy = readParameter<float>(fSettings, "Camera7.cy", found);
+
+        vCalibration = {fx, fy, cx, cy};
+
+        calibration7_ = new Pinhole(vCalibration);
+        // originalCalib7_ = new Pinhole(vCalibration);
+
+        int colBegin = readParameter<int>(fSettings, "Camera7.overlappingBegin", found);
+        int colEnd = readParameter<int>(fSettings, "Camera7.overlappingEnd", found);
+        vector<int> vOverlapping = {colBegin, colEnd};
+
+        static_cast<KannalaBrandt8 *>(calibration7_)->mvLappingArea = vOverlapping;
+    } else if (cameraType_ == KannalaBrandt) {
+        // Read intrinsic parameters
+        float fx = readParameter<float>(fSettings, "Camera7.fx", found);
+        float fy = readParameter<float>(fSettings, "Camera7.fy", found);
+        float cx = readParameter<float>(fSettings, "Camera7.cx", found);
+        float cy = readParameter<float>(fSettings, "Camera7.cy", found);
+
+        float k0 = readParameter<float>(fSettings, "Camera7.k1", found);
+        float k1 = readParameter<float>(fSettings, "Camera7.k2", found);
+        float k2 = readParameter<float>(fSettings, "Camera7.k3", found);
+        float k3 = readParameter<float>(fSettings, "Camera7.k4", found);
+
+        vCalibration = {fx, fy, cx, cy, k0, k1, k2, k3};
+
+        calibration7_ = new KannalaBrandt8(vCalibration);
+        // originalCalib7_ = new KannalaBrandt8(vCalibration);
+
+        int colBegin = readParameter<int>(fSettings, "Camera7.overlappingBegin", found);
+        int colEnd = readParameter<int>(fSettings, "Camera7.overlappingEnd", found);
+        vector<int> vOverlapping = {colBegin, colEnd};
+
+        static_cast<KannalaBrandt8 *>(calibration7_)->mvLappingArea = vOverlapping;
+    }
+}
+
+void Settings::readCamera8(cv::FileStorage &fSettings) {
+    bool found;
+    vector<float> vCalibration;
+    if (cameraType_ == PinHole) {
+        // Read intrinsic parameters
+        float fx = readParameter<float>(fSettings, "Camera8.fx", found);
+        float fy = readParameter<float>(fSettings, "Camera8.fy", found);
+        float cx = readParameter<float>(fSettings, "Camera8.cx", found);
+        float cy = readParameter<float>(fSettings, "Camera8.cy", found);
+
+        vCalibration = {fx, fy, cx, cy};
+
+        calibration8_ = new Pinhole(vCalibration);
+        // originalCalib8_ = new Pinhole(vCalibration);
+
+        int colBegin = readParameter<int>(fSettings, "Camera8.overlappingBegin", found);
+        int colEnd = readParameter<int>(fSettings, "Camera8.overlappingEnd", found);
+        vector<int> vOverlapping = {colBegin, colEnd};
+
+        static_cast<KannalaBrandt8 *>(calibration8_)->mvLappingArea = vOverlapping;
+    } else if (cameraType_ == KannalaBrandt) {
+        // Read intrinsic parameters
+        float fx = readParameter<float>(fSettings, "Camera8.fx", found);
+        float fy = readParameter<float>(fSettings, "Camera8.fy", found);
+        float cx = readParameter<float>(fSettings, "Camera8.cx", found);
+        float cy = readParameter<float>(fSettings, "Camera8.cy", found);
+
+        float k0 = readParameter<float>(fSettings, "Camera8.k1", found);
+        float k1 = readParameter<float>(fSettings, "Camera8.k2", found);
+        float k2 = readParameter<float>(fSettings, "Camera8.k3", found);
+        float k3 = readParameter<float>(fSettings, "Camera8.k4", found);
+
+        vCalibration = {fx, fy, cx, cy, k0, k1, k2, k3};
+
+        calibration8_ = new KannalaBrandt8(vCalibration);
+        // originalCalib8_ = new KannalaBrandt8(vCalibration);
+
+        int colBegin = readParameter<int>(fSettings, "Camera8.overlappingBegin", found);
+        int colEnd = readParameter<int>(fSettings, "Camera8.overlappingEnd", found);
+        vector<int> vOverlapping = {colBegin, colEnd};
+
+        static_cast<KannalaBrandt8 *>(calibration8_)->mvLappingArea = vOverlapping;
+    }
+}
+
+void Settings::readImageInfo(cv::FileStorage &fSettings) {
+
+    bool found;
+
     // Read original and desired image dimensions
     int originalRows = readParameter<int>(fSettings, "Camera.height", found);
     int originalCols = readParameter<int>(fSettings, "Camera.width", found);
@@ -496,101 +682,6 @@ void Settings::readImageInfo(cv::FileStorage &fSettings) {
     originalImSize_.height = originalRows;
 
     newImSize_ = originalImSize_;
-    int newHeigh = readParameter<int>(fSettings, "Camera.newHeight", found, false);
-    if (found) {
-        bNeedToResize1_ = true;
-        newImSize_.height = newHeigh;
-
-        if (!bNeedToRectify_) {
-            // Update calibration
-            float scaleRowFactor = (float)newImSize_.height / (float)originalImSize_.height;
-            calibration1_->setParameter(calibration1_->getParameter(1) * scaleRowFactor, 1);
-            calibration1_->setParameter(calibration1_->getParameter(3) * scaleRowFactor, 3);
-
-            if ((sensor_ == System::STEREO || sensor_ == System::IMU_STEREO ||
-                 sensor_ == System::IMU_MULTI) &&
-                cameraType_ != Rectified) {
-                calibration2_->setParameter(calibration2_->getParameter(1) * scaleRowFactor, 1);
-                calibration2_->setParameter(calibration2_->getParameter(3) * scaleRowFactor, 3);
-
-                if (sensor_ == System::IMU_MULTI) {
-                    calibration3_->setParameter(
-                        calibration3_->getParameter(1) * scaleRowFactor,
-                        1);
-                    calibration3_->setParameter(
-                        calibration3_->getParameter(3) * scaleRowFactor,
-                        3);
-
-                    calibration4_->setParameter(
-                        calibration4_->getParameter(1) * scaleRowFactor,
-                        1);
-                    calibration4_->setParameter(
-                        calibration4_->getParameter(3) * scaleRowFactor,
-                        3);
-                }
-            }
-        }
-    }
-
-    int newWidth = readParameter<int>(fSettings, "Camera.newWidth", found, false);
-    if (found) {
-        bNeedToResize1_ = true;
-        newImSize_.width = newWidth;
-
-        if (!bNeedToRectify_) {
-            // Update calibration
-            float scaleColFactor = (float)newImSize_.width / (float)originalImSize_.width;
-            calibration1_->setParameter(calibration1_->getParameter(0) * scaleColFactor, 0);
-            calibration1_->setParameter(calibration1_->getParameter(2) * scaleColFactor, 2);
-
-            if ((sensor_ == System::STEREO || sensor_ == System::IMU_STEREO ||
-                 sensor_ == System::IMU_MULTI) &&
-                cameraType_ != Rectified) {
-                calibration2_->setParameter(calibration2_->getParameter(0) * scaleColFactor, 0);
-                calibration2_->setParameter(calibration2_->getParameter(2) * scaleColFactor, 2);
-
-                if (sensor_ == System::IMU_MULTI) {
-                    calibration3_->setParameter(
-                        calibration3_->getParameter(0) * scaleColFactor,
-                        0);
-                    calibration3_->setParameter(
-                        calibration3_->getParameter(2) * scaleColFactor,
-                        2);
-
-                    calibration4_->setParameter(
-                        calibration4_->getParameter(0) * scaleColFactor,
-                        0);
-                    calibration4_->setParameter(
-                        calibration4_->getParameter(2) * scaleColFactor,
-                        2);
-                }
-
-                if (cameraType_ == KannalaBrandt) {
-                    static_cast<KannalaBrandt8 *>(calibration1_)->mvLappingArea[0] *=
-                        scaleColFactor;
-                    static_cast<KannalaBrandt8 *>(calibration1_)->mvLappingArea[1] *=
-                        scaleColFactor;
-
-                    static_cast<KannalaBrandt8 *>(calibration2_)->mvLappingArea[0] *=
-                        scaleColFactor;
-                    static_cast<KannalaBrandt8 *>(calibration2_)->mvLappingArea[1] *=
-                        scaleColFactor;
-
-                    if (sensor_ == System::IMU_MULTI) {
-                        static_cast<KannalaBrandt8 *>(calibration3_)->mvLappingArea[0] *=
-                            scaleColFactor;
-                        static_cast<KannalaBrandt8 *>(calibration3_)->mvLappingArea[1] *=
-                            scaleColFactor;
-
-                        static_cast<KannalaBrandt8 *>(calibration4_)->mvLappingArea[0] *=
-                            scaleColFactor;
-                        static_cast<KannalaBrandt8 *>(calibration4_)->mvLappingArea[1] *=
-                            scaleColFactor;
-                    }
-                }
-            }
-        }
-    }
 
     fps_ = readParameter<int>(fSettings, "Camera.fps", found);
     bRGB_ = (bool)readParameter<int>(fSettings, "Camera.RGB", found);

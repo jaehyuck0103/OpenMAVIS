@@ -11,18 +11,6 @@
 
 using namespace std;
 
-void LoadImages(
-    const string &strPathLeft,
-    const string &strPathRight,
-    const string &strPathSideLeft,
-    const string &strPathSideRight,
-    const string &strPathTimes,
-    vector<string> &vstrImageLeft,
-    vector<string> &vstrImageRight,
-    vector<string> &vstrImageSideLeft,
-    vector<string> &vstrImageSideRight,
-    vector<double> &vTimeStamps);
-
 void LoadIMU(
     const string &strImuPath,
     vector<double> &vTimeStamps,
@@ -42,6 +30,17 @@ int main(int argc, char **argv) {
     vector<string> vstrImageRight;
     vector<string> vstrImageSideLeft;
     vector<string> vstrImageSideRight;
+
+    vector<string> vstrImageLeft2;
+    vector<string> vstrImageRight2;
+    vector<string> vstrImageSideLeft2;
+    vector<string> vstrImageSideRight2;
+
+    vector<string> vstrDepthLeft2;
+    vector<string> vstrDepthRight2;
+    vector<string> vstrDepthSideLeft2;
+    vector<string> vstrDepthSideRight2;
+
     vector<double> vTimestampsCam;
     vector<cv::Point3f> vAcc, vGyro;
     vector<double> vTimestampsImu;
@@ -56,18 +55,52 @@ int main(int argc, char **argv) {
     string pathCam1 = pathSeq + "/cam0/Zero_DCE_PLUS"; // Right Camera
     string pathCam2 = pathSeq + "/cam4/Zero_DCE_PLUS"; // SideLeft Camera
     string pathCam3 = pathSeq + "/cam3/Zero_DCE_PLUS"; // Sideright Camera
+
+    string pathCam4 = pathSeq + "/cam1/Zero_DCE_PLUS_undistorted"; // Left Camera
+    string pathCam5 = pathSeq + "/cam0/Zero_DCE_PLUS_undistorted"; // Right Camera
+    string pathCam6 = pathSeq + "/cam4/Zero_DCE_PLUS_undistorted"; // SideLeft Camera
+    string pathCam7 = pathSeq + "/cam3/Zero_DCE_PLUS_undistorted"; // Sideright Camera
+
+    string pathDepth4 = pathSeq + "/cam1/Abs_Depth_undistorted"; // Left Camera
+    string pathDepth5 = pathSeq + "/cam0/Abs_Depth_undistorted"; // Right Camera
+    string pathDepth6 = pathSeq + "/cam4/Abs_Depth_undistorted"; // SideLeft Camera
+    string pathDepth7 = pathSeq + "/cam3/Abs_Depth_undistorted"; // Sideright Camera
+
     string pathImu = pathSeq + "/imu0/data.csv";
-    LoadImages(
-        pathCam0,
-        pathCam1,
-        pathCam2,
-        pathCam3,
-        pathTimeStamps,
-        vstrImageLeft,
-        vstrImageRight,
-        vstrImageSideLeft,
-        vstrImageSideRight,
-        vTimestampsCam);
+
+    // LoadImages
+    {
+        ifstream fTimes;
+        fTimes.open(pathTimeStamps.c_str());
+
+        while (!fTimes.eof()) {
+            string s;
+            getline(fTimes, s);
+            if (!s.empty()) {
+                stringstream ss;
+                ss << s;
+                vstrImageLeft.push_back(pathCam0 + "/" + ss.str() + ".png");
+                vstrImageRight.push_back(pathCam1 + "/" + ss.str() + ".png");
+                vstrImageSideLeft.push_back(pathCam2 + "/" + ss.str() + ".png");
+                vstrImageSideRight.push_back(pathCam3 + "/" + ss.str() + ".png");
+
+                vstrImageLeft2.push_back(pathCam4 + "/" + ss.str() + ".png");
+                vstrImageRight2.push_back(pathCam5 + "/" + ss.str() + ".png");
+                vstrImageSideLeft2.push_back(pathCam6 + "/" + ss.str() + ".png");
+                vstrImageSideRight2.push_back(pathCam7 + "/" + ss.str() + ".png");
+
+                vstrDepthLeft2.push_back(pathDepth4 + "/" + ss.str() + ".png");
+                vstrDepthRight2.push_back(pathDepth5 + "/" + ss.str() + ".png");
+                vstrDepthSideLeft2.push_back(pathDepth6 + "/" + ss.str() + ".png");
+                vstrDepthSideRight2.push_back(pathDepth7 + "/" + ss.str() + ".png");
+
+                double t;
+                ss >> t;
+                vTimestampsCam.push_back(t / 1e9);
+            }
+        }
+    }
+
     cout << "LOADED!" << endl;
 
     cout << "Loading IMU ...";
@@ -95,40 +128,56 @@ int main(int argc, char **argv) {
     ORB_SLAM3::System SLAM(argv[1], argv[2], ORB_SLAM3::System::IMU_MULTI, true);
     ORB_SLAM3::Verbose::SetTh(ORB_SLAM3::Verbose::VERBOSITY_DEBUG);
 
-    cv::Mat imLeft, imRight, imSideLeft, imSideRight;
-    vector<ORB_SLAM3::IMU::Point> vImuMeas;
-
     for (int ni = 0; ni < nImages; ni++) {
 
-        imLeft = cv::imread(vstrImageLeft[ni], cv::IMREAD_UNCHANGED);
-        imRight = cv::imread(vstrImageRight[ni], cv::IMREAD_UNCHANGED);
-        imSideLeft = cv::imread(vstrImageSideLeft[ni], cv::IMREAD_UNCHANGED);
-        imSideRight = cv::imread(vstrImageSideRight[ni], cv::IMREAD_UNCHANGED);
+        cv::Mat imLeft = cv::imread(vstrImageLeft[ni], cv::IMREAD_GRAYSCALE);
+        cv::Mat imRight = cv::imread(vstrImageRight[ni], cv::IMREAD_GRAYSCALE);
+        cv::Mat imSideLeft = cv::imread(vstrImageSideLeft[ni], cv::IMREAD_GRAYSCALE);
+        cv::Mat imSideRight = cv::imread(vstrImageSideRight[ni], cv::IMREAD_GRAYSCALE);
 
-        if (imLeft.empty()) {
+        cv::Mat imLeft2 = cv::imread(vstrImageLeft2[ni], cv::IMREAD_GRAYSCALE);
+        cv::Mat imRight2 = cv::imread(vstrImageRight2[ni], cv::IMREAD_GRAYSCALE);
+        cv::Mat imSideLeft2 = cv::imread(vstrImageSideLeft2[ni], cv::IMREAD_GRAYSCALE);
+        cv::Mat imSideRight2 = cv::imread(vstrImageSideRight2[ni], cv::IMREAD_GRAYSCALE);
+
+        if (imLeft.empty() || imRight.empty() || imSideLeft.empty() || imSideRight.empty()) {
+            cerr << endl << "Failed to load image at: " << string(vstrImageLeft[ni]) << endl;
+            return 1;
+        }
+        if (imLeft2.empty() || imRight2.empty() || imSideLeft2.empty() || imSideRight2.empty()) {
             cerr << endl << "Failed to load image at: " << string(vstrImageLeft[ni]) << endl;
             return 1;
         }
 
-        if (imRight.empty()) {
-            cerr << endl << "Failed to load image at: " << string(vstrImageRight[ni]) << endl;
-            return 1;
-        }
+        cv::Mat depthLeft2 = cv::imread(vstrDepthLeft2[ni], cv::IMREAD_UNCHANGED);
+        cv::Mat depthRight2 = cv::imread(vstrDepthRight2[ni], cv::IMREAD_UNCHANGED);
+        cv::Mat depthSideLeft2 = cv::imread(vstrDepthSideLeft2[ni], cv::IMREAD_UNCHANGED);
+        cv::Mat depthSideRight2 = cv::imread(vstrDepthSideRight2[ni], cv::IMREAD_UNCHANGED);
 
-        if (imSideLeft.empty()) {
-            cerr << endl << "Failed to load image at: " << string(vstrImageSideLeft[ni]) << endl;
-            return 1;
-        }
+        if (depthLeft2.empty() && depthRight2.empty() && depthSideLeft2.empty() &&
+            depthSideRight2.empty()) {
 
-        if (imSideRight.empty()) {
-            cerr << endl << "Failed to load image at: " << string(vstrImageSideRight[ni]) << endl;
+            depthLeft2 = cv::Mat::zeros(imLeft2.size(), CV_32F);
+            depthRight2 = cv::Mat::zeros(imRight2.size(), CV_32F);
+            depthSideLeft2 = cv::Mat::zeros(imSideLeft2.size(), CV_32F);
+            depthSideRight2 = cv::Mat::zeros(imSideRight2.size(), CV_32F);
+        } else if (
+            !depthLeft2.empty() && !depthRight2.empty() && !depthSideLeft2.empty() &&
+            !depthSideRight2.empty()) {
+
+            depthLeft2.convertTo(depthLeft2, CV_32F, 1.0 / 256.0);
+            depthRight2.convertTo(depthRight2, CV_32F, 1.0 / 256.0);
+            depthSideLeft2.convertTo(depthSideLeft2, CV_32F, 1.0 / 256.0);
+            depthSideRight2.convertTo(depthSideRight2, CV_32F, 1.0 / 256.0);
+        } else {
+            cerr << endl << "Depth Read Error" << endl;
             return 1;
         }
 
         double tframe = vTimestampsCam[ni];
 
         // Load imu measurements from previous frame
-        vImuMeas.clear();
+        vector<ORB_SLAM3::IMU::Point> vImuMeas;
         if (ni > 0) {
             while (vTimestampsImu[first_imu] <= vTimestampsCam[ni]) {
                 vImuMeas.push_back(
@@ -147,7 +196,21 @@ int main(int argc, char **argv) {
         std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
         // Pass the images to the SLAM system
-        SLAM.TrackMulti(imLeft, imRight, imSideLeft, imSideRight, tframe, vImuMeas);
+        SLAM.TrackMulti(
+            imLeft,
+            imRight,
+            imSideLeft,
+            imSideRight,
+            imLeft2,
+            imRight2,
+            imSideLeft2,
+            imSideRight2,
+            depthLeft2,
+            depthRight2,
+            depthSideLeft2,
+            depthSideRight2,
+            tframe,
+            vImuMeas);
 
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
 
@@ -174,38 +237,6 @@ int main(int argc, char **argv) {
     SLAM.SaveKeyFrameTrajectoryEuRoC("KeyFrameTrajectory.txt");
 
     return 0;
-}
-
-void LoadImages(
-    const string &strPathLeft,
-    const string &strPathRight,
-    const string &strPathSideLeft,
-    const string &strPathSideRight,
-    const string &strPathTimes,
-    vector<string> &vstrImageLeft,
-    vector<string> &vstrImageRight,
-    vector<string> &vstrImageSideLeft,
-    vector<string> &vstrImageSideRight,
-    vector<double> &vTimeStamps) {
-
-    ifstream fTimes;
-    fTimes.open(strPathTimes.c_str());
-
-    while (!fTimes.eof()) {
-        string s;
-        getline(fTimes, s);
-        if (!s.empty()) {
-            stringstream ss;
-            ss << s;
-            vstrImageLeft.push_back(strPathLeft + "/" + ss.str() + ".png");
-            vstrImageRight.push_back(strPathRight + "/" + ss.str() + ".png");
-            vstrImageSideLeft.push_back(strPathSideLeft + "/" + ss.str() + ".png");
-            vstrImageSideRight.push_back(strPathSideRight + "/" + ss.str() + ".png");
-            double t;
-            ss >> t;
-            vTimeStamps.push_back(t / 1e9);
-        }
-    }
 }
 
 void LoadIMU(

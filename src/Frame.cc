@@ -47,10 +47,6 @@ Frame::Frame(const Frame &frame)
       mpORBextractorRight(frame.mpORBextractorRight),
       mpORBextractorSideLeft(frame.mpORBextractorSideLeft),
       mpORBextractorSideRight(frame.mpORBextractorSideRight),
-      mbEnableLeft(true),
-      mbEnableRight(true),
-      mbEnableSideLeft(true),
-      mbEnableSideRight(true),
       mTimeStamp(frame.mTimeStamp),
       mK(frame.mK.clone()),
       mK_(Converter::toMatrix3f(frame.mK)),
@@ -642,6 +638,57 @@ void Frame::ExtractORB(
             mDescriptorsSideRight = emptyDescriptors;
             mvKeysSideRight = emptyKeys;
             monoSideRight = 0;
+        }
+        break;
+    }
+    case 4: {
+        if (enableCamera)
+            monoLeft2 = (*mpORBextractorLeft2)(im, cv::Mat(), mvKeys2, mDescriptors2, vLapping);
+        else {
+            mDescriptors2 = emptyDescriptors;
+            mvKeys2 = emptyKeys;
+            monoLeft2 = 0;
+        }
+        break;
+    }
+    case 5: {
+        if (enableCamera)
+            monoRight2 =
+                (*mpORBextractorRight2)(im, cv::Mat(), mvKeysRight2, mDescriptorsRight2, vLapping);
+        else {
+            mDescriptorsRight2 = emptyDescriptors;
+            mvKeysRight2 = emptyKeys;
+            monoRight2 = 0;
+        }
+        break;
+    }
+    case 6: {
+        if (enableCamera)
+            monoSideLeft2 = (*mpORBextractorSideLeft2)(
+                im,
+                cv::Mat(),
+                mvKeysSideLeft2,
+                mDescriptorsSideLeft2,
+                vLapping);
+        else {
+            mDescriptorsSideLeft2 = emptyDescriptors;
+            mvKeysSideLeft2 = emptyKeys;
+            monoSideLeft2 = 0;
+        }
+        break;
+    }
+    case 7: {
+        if (enableCamera)
+            monoSideRight2 = (*mpORBextractorSideRight2)(
+                im,
+                cv::Mat(),
+                mvKeysSideRight2,
+                mDescriptorsSideRight2,
+                vLapping);
+        else {
+            mDescriptorsSideRight2 = emptyDescriptors;
+            mvKeysSideRight2 = emptyKeys;
+            monoSideRight2 = 0;
         }
         break;
     }
@@ -1300,9 +1347,6 @@ Frame::Frame(
       mbHasVelocity(false)
 
 {
-    imgLeft = imLeft.clone();
-    imgRight = imRight.clone();
-
     // Frame ID
     mnId = nNextId++;
 
@@ -1663,15 +1707,31 @@ Frame::Frame(
     const cv::Mat &imRight,
     const cv::Mat &imSideLeft,
     const cv::Mat &imSideRight,
+    const cv::Mat &imLeft2,
+    const cv::Mat &imRight2,
+    const cv::Mat &imSideLeft2,
+    const cv::Mat &imSideRight2,
+    const cv::Mat &depthLeft2,
+    const cv::Mat &depthRight2,
+    const cv::Mat &depthSideLeft2,
+    const cv::Mat &depthSideRight2,
     const double &timeStamp,
     ORBextractor *extractorLeft,
     ORBextractor *extractorRight,
-    ORBextractor *ORBextractorSideLeft,
-    ORBextractor *ORBextractorSideRight,
+    ORBextractor *extractorSideLeft,
+    ORBextractor *extractorSideRight,
+    ORBextractor *extractorLeft2,
+    ORBextractor *extractorRight2,
+    ORBextractor *extractorSideLeft2,
+    ORBextractor *extractorSideRight2,
     bool bleft,
     bool bright,
     bool bsideleft,
     bool bsideright,
+    bool bleft2,
+    bool bright2,
+    bool bsideleft2,
+    bool bsideright2,
     ORBVocabulary *voc,
     cv::Mat &K,
     cv::Mat &distCoef,
@@ -1681,6 +1741,10 @@ Frame::Frame(
     GeometricCamera *pCamera2,
     GeometricCamera *pCamera3,
     GeometricCamera *pCamera4,
+    GeometricCamera *pCamera5,
+    GeometricCamera *pCamera6,
+    GeometricCamera *pCamera7,
+    GeometricCamera *pCamera8,
     Sophus::SE3f &Tlr,
     Sophus::SE3f &Tlsl,
     Sophus::SE3f &Tlsr,
@@ -1690,12 +1754,12 @@ Frame::Frame(
       mpORBvocabulary(voc),
       mpORBextractorLeft(extractorLeft),
       mpORBextractorRight(extractorRight),
-      mpORBextractorSideLeft(ORBextractorSideLeft),
-      mpORBextractorSideRight(ORBextractorSideRight),
-      mbEnableLeft(bleft),
-      mbEnableRight(bright),
-      mbEnableSideLeft(bsideleft),
-      mbEnableSideRight(bsideright),
+      mpORBextractorSideLeft(extractorSideLeft),
+      mpORBextractorSideRight(extractorSideRight),
+      mpORBextractorLeft2(extractorLeft2),
+      mpORBextractorRight2(extractorRight2),
+      mpORBextractorSideLeft2(extractorSideLeft2),
+      mpORBextractorSideRight2(extractorSideRight2),
       mTimeStamp(timeStamp),
       mK(K.clone()),
       mK_(Converter::toMatrix3f(K)),
@@ -1712,15 +1776,14 @@ Frame::Frame(
       mpCamera2(pCamera2),
       mpCamera3(pCamera3),
       mpCamera4(pCamera4),
+      mpCamera5(pCamera5),
+      mpCamera6(pCamera6),
+      mpCamera7(pCamera7),
+      mpCamera8(pCamera8),
       mbHasPose(false),
       mbHasVelocity(false)
 
 {
-    imgLeft = imLeft.clone();
-    imgRight = imRight.clone();
-    imgSideLeft = imSideLeft.clone();
-    imgSideRight = imSideRight.clone();
-
     // Frame ID
     mnId = nNextId++;
 
@@ -1734,9 +1797,6 @@ Frame::Frame(
     mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
 
     // ORB extraction
-#ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_StartExtORB = std::chrono::steady_clock::now();
-#endif
     thread threadLeft(
         &Frame::ExtractORB,
         this,
@@ -1755,26 +1815,36 @@ Frame::Frame(
         static_cast<KannalaBrandt8 *>(mpCamera2)->mvLappingArea[1]);
     thread threadSideLeft(&Frame::ExtractORB, this, 2, bsideleft, imSideLeft, 0, 0);
     thread threadSideRight(&Frame::ExtractORB, this, 3, bsideright, imSideRight, 0, 0);
+
+    thread threadLeft2(&Frame::ExtractORB, this, 4, bleft2, imLeft2, 0, 0);
+    thread threadRight2(&Frame::ExtractORB, this, 5, bright2, imRight2, 0, 0);
+    thread threadSideLeft2(&Frame::ExtractORB, this, 6, bsideleft2, imSideLeft2, 0, 0);
+    thread threadSideRight2(&Frame::ExtractORB, this, 7, bsideright2, imSideRight2, 0, 0);
+
     threadLeft.join();
     threadRight.join();
     threadSideLeft.join();
     threadSideRight.join();
-#ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_EndExtORB = std::chrono::steady_clock::now();
 
-    mTimeORB_Ext = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-                       time_EndExtORB - time_StartExtORB)
-                       .count();
-#endif
+    threadLeft2.join();
+    threadRight2.join();
+    threadSideLeft2.join();
+    threadSideRight2.join();
+    //
 
     Nleft = mvKeys.size();
     Nright = mvKeysRight.size();
     Nsideleft = mvKeysSideLeft.size();
     Nsideright = mvKeysSideRight.size();
-    N = Nleft + Nright + Nsideleft + Nsideright;
+    Nleft2 = mvKeys2.size();
+    Nright2 = mvKeysRight2.size();
+    Nsideleft2 = mvKeysSideLeft2.size();
+    Nsideright2 = mvKeysSideRight2.size();
+    N = Nleft + Nright + Nsideleft + Nsideright; // + Nleft2 + Nright2 + Nsideleft2 + Nsideright2;
 
-    if (N == 0)
+    if (N == 0) {
         return;
+    }
 
     // This is done only for the first Frame (or after a change in the calibration)
     if (mbInitialComputations) {
@@ -1811,27 +1881,18 @@ Frame::Frame(
     mRlsr = mTlsr.rotationMatrix();
     mtlsr = mTlsr.translation();
 
-#ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_StartStereoMatches =
-        std::chrono::steady_clock::now();
-#endif
     // Here we assume sideward camera has no significant overlap with stereo camera. we do not
     // peform stereo matching between sideward and forward
-    // TODO: Extend to multi-camera case
     ComputeMultiFishEyeMatches();
-#ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_EndStereoMatches = std::chrono::steady_clock::now();
-
-    mTimeStereoMatch = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-                           time_EndStereoMatches - time_StartStereoMatches)
-                           .count();
-#endif
 
     // Put all descriptors in the same matrix
-    cv::Mat frontDescriptors, sideDescriptors;
-    cv::vconcat(mDescriptors, mDescriptorsRight, frontDescriptors);
-    cv::vconcat(mDescriptorsSideLeft, mDescriptorsSideRight, sideDescriptors);
-    cv::vconcat(frontDescriptors, sideDescriptors, mDescriptors);
+    cv::vconcat(mDescriptors, mDescriptorsRight, mDescriptors);
+    cv::vconcat(mDescriptors, mDescriptorsSideLeft, mDescriptors);
+    cv::vconcat(mDescriptors, mDescriptorsSideRight, mDescriptors);
+    // cv::vconcat(mDescriptors, mDescriptors2, mDescriptors);
+    // cv::vconcat(mDescriptors, mDescriptorsRight2, mDescriptors);
+    // cv::vconcat(mDescriptors, mDescriptorsSideLeft2, mDescriptors);
+    // cv::vconcat(mDescriptors, mDescriptorsSideRight2, mDescriptors);
 
     mvpMapPoints = vector<MapPoint *>(N, static_cast<MapPoint *>(nullptr));
     mvbOutlier = vector<bool>(N, false);

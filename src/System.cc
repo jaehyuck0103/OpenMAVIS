@@ -313,35 +313,22 @@ Sophus::SE3f System::TrackMulti(
     const cv::Mat &imRight,
     const cv::Mat &imSideLeft,
     const cv::Mat &imSideRight,
+    const cv::Mat &imLeft2,
+    const cv::Mat &imRight2,
+    const cv::Mat &imSideLeft2,
+    const cv::Mat &imSideRight2,
+    const cv::Mat &depthLeft2,
+    const cv::Mat &depthRight2,
+    const cv::Mat &depthSideLeft2,
+    const cv::Mat &depthSideRight2,
     const double &timestamp,
     const vector<IMU::Point> &vImuMeas,
     string filename) {
+
     if (mSensor != IMU_MULTI) {
-        cerr << "ERROR: you called TrackStereo but input sensor was not set to Multi-Inertial."
+        cerr << "ERROR: you called TrackMulti but input sensor was not set to Multi-Inertial."
              << endl;
         exit(-1);
-    }
-
-    cv::Mat imLeftToFeed, imRightToFeed;
-    cv::Mat imSideLeftToFeed, imSideRightToFeed;
-    if (settings_ && settings_->needToRectify()) {
-        cv::Mat M1l = settings_->M1l();
-        cv::Mat M2l = settings_->M2l();
-        cv::Mat M1r = settings_->M1r();
-        cv::Mat M2r = settings_->M2r();
-
-        cv::remap(imLeft, imLeftToFeed, M1l, M2l, cv::INTER_LINEAR);
-        cv::remap(imRight, imRightToFeed, M1r, M2r, cv::INTER_LINEAR);
-    } else if (settings_ && settings_->needToResize()) {
-        cv::resize(imLeft, imLeftToFeed, settings_->newImSize());
-        cv::resize(imRight, imRightToFeed, settings_->newImSize());
-        cv::resize(imSideLeft, imSideLeftToFeed, settings_->newImSize());
-        cv::resize(imSideRight, imSideRightToFeed, settings_->newImSize());
-    } else {
-        imLeftToFeed = imLeft.clone();
-        imRightToFeed = imRight.clone();
-        imSideLeftToFeed = imSideLeft.clone();
-        imSideRightToFeed = imSideRight.clone();
     }
 
     // Check mode change
@@ -378,15 +365,23 @@ Sophus::SE3f System::TrackMulti(
         }
     }
 
-    if (mSensor == System::IMU_MULTI)
-        for (size_t i_imu = 0; i_imu < vImuMeas.size(); i_imu++)
-            mpTracker->GrabImuData(vImuMeas[i_imu]);
+    for (size_t i_imu = 0; i_imu < vImuMeas.size(); i_imu++) {
+        mpTracker->GrabImuData(vImuMeas[i_imu]);
+    }
 
     Sophus::SE3f Twb = mpTracker->GrabImageMulti(
-        imLeftToFeed,
-        imRightToFeed,
-        imSideLeftToFeed,
-        imSideRightToFeed,
+        imLeft,
+        imRight,
+        imSideLeft,
+        imSideRight,
+        imLeft2,
+        imRight2,
+        imSideLeft2,
+        imSideRight2,
+        depthLeft2,
+        depthRight2,
+        depthSideLeft2,
+        depthSideRight2,
         timestamp,
         filename);
 

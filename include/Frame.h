@@ -231,9 +231,8 @@ class Frame {
     // multi camera case
     ORBextractor *mpORBextractorLeft, *mpORBextractorRight;
     ORBextractor *mpORBextractorSideLeft, *mpORBextractorSideRight;
-
-    // Enable Feature extraction
-    bool mbEnableLeft, mbEnableRight, mbEnableSideLeft, mbEnableSideRight;
+    ORBextractor *mpORBextractorLeft2, *mpORBextractorRight2;
+    ORBextractor *mpORBextractorSideLeft2, *mpORBextractorSideRight2;
 
     // Frame timestamp.
     double mTimeStamp;
@@ -268,6 +267,8 @@ class Frame {
     // mvKeysSideRight are for sideward cameras.
     std::vector<cv::KeyPoint> mvKeys, mvKeysRight;
     std::vector<cv::KeyPoint> mvKeysSideLeft, mvKeysSideRight;
+    std::vector<cv::KeyPoint> mvKeys2, mvKeysRight2;
+    std::vector<cv::KeyPoint> mvKeysSideLeft2, mvKeysSideRight2;
     std::vector<cv::KeyPoint> mvKeysUn;
 
     // Corresponding stereo coordinate and depth for each keypoint.
@@ -283,6 +284,8 @@ class Frame {
     // ORB descriptor, each row associated to a keypoint.
     cv::Mat mDescriptors, mDescriptorsRight;
     cv::Mat mDescriptorsSideLeft, mDescriptorsSideRight;
+    cv::Mat mDescriptors2, mDescriptorsRight2;
+    cv::Mat mDescriptorsSideLeft2, mDescriptorsSideRight2;
 
     // MapPoints associated to keypoints, NULL pointer if no association.
     // Flag to identify outlier associations.
@@ -368,6 +371,8 @@ class Frame {
   public:
     GeometricCamera *mpCamera, *mpCamera2;  // For stereo left and right camera
     GeometricCamera *mpCamera3, *mpCamera4; // For sideleft and right camera
+    GeometricCamera *mpCamera5, *mpCamera6; // For stereo left and right camera
+    GeometricCamera *mpCamera7, *mpCamera8; // For sideleft and right camera
 
     // Number of KeyPoints extracted in the left and right images
     int Nleft, Nright;
@@ -378,6 +383,16 @@ class Frame {
     int Nsideleft, Nsideright;
     // Number of Non Lapping Keypoints
     int monoSideLeft, monoSideRight;
+
+    // Number of KeyPoints extracted in the left and right images
+    int Nleft2, Nright2;
+    // Number of Non Lapping Keypoints
+    int monoLeft2, monoRight2;
+
+    // Number of KeyPoints extracted in the sideleft and sideright images
+    int Nsideleft2, Nsideright2;
+    // Number of Non Lapping Keypoints
+    int monoSideLeft2, monoSideRight2;
 
     // For stereo matching
     std::vector<int> mvLeftToRightMatch, mvRightToLeftMatch;
@@ -427,15 +442,31 @@ class Frame {
         const cv::Mat &imRight,
         const cv::Mat &imSideLeft,
         const cv::Mat &imSideRight,
+        const cv::Mat &imLeft2,
+        const cv::Mat &imRight2,
+        const cv::Mat &imSideLeft2,
+        const cv::Mat &imSideRight2,
+        const cv::Mat &depthLeft2,
+        const cv::Mat &depthRight2,
+        const cv::Mat &depthSideLeft2,
+        const cv::Mat &depthSideRight2,
         const double &timeStamp,
         ORBextractor *extractorLeft,
         ORBextractor *extractorRight,
         ORBextractor *extractorSideLeft,
         ORBextractor *extractorSideRight,
+        ORBextractor *extractorLeft2,
+        ORBextractor *extractorRight2,
+        ORBextractor *extractorSideLeft2,
+        ORBextractor *extractorSideRight2,
         bool bEnableLeft,
         bool bEnableRight,
         bool bEnableSideLeft,
         bool bEnableSideRight,
+        bool bEnableLeft2,
+        bool bEnableRight2,
+        bool bEnableSideLeft2,
+        bool bEnableSideRight2,
         ORBVocabulary *voc,
         cv::Mat &K,
         cv::Mat &distCoef,
@@ -445,6 +476,10 @@ class Frame {
         GeometricCamera *pCamera2,
         GeometricCamera *pCamera3,
         GeometricCamera *pCamera4,
+        GeometricCamera *pCamera5,
+        GeometricCamera *pCamera6,
+        GeometricCamera *pCamera7,
+        GeometricCamera *pCamera8,
         Sophus::SE3f &Tlr,
         Sophus::SE3f &Tlsl,
         Sophus::SE3f &Tlsr,
@@ -461,9 +496,6 @@ class Frame {
     bool isInFrustumChecks(MapPoint *pMP, float viewingCosLimit, int selectedCamera = 0);
 
     Eigen::Vector3f UnprojectStereoFishEye(const int &i);
-
-    cv::Mat imgLeft, imgRight;
-    cv::Mat imgSideLeft, imgSideRight;
 
     void PrintPointDistribution() {
         int left = 0, right = 0;
