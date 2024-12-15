@@ -69,10 +69,14 @@ class Tracking {
         string filename);
     Sophus::SE3f GrabImageMonocular(const cv::Mat &im, const double &timestamp, string filename);
     Sophus::SE3f GrabImageMulti(
-        const cv::Mat &imRectLeft,
-        const cv::Mat &imRectRight,
-        const cv::Mat &imRectSideLeft,
-        const cv::Mat &imRectSideRight,
+        const cv::Mat &imLeft,
+        const cv::Mat &imRight,
+        const cv::Mat &imSideLeft,
+        const cv::Mat &imSideRight,
+        const cv::Mat &depthUdLeft,
+        const cv::Mat &depthUdRight,
+        const cv::Mat &depthUdSideLeft,
+        const cv::Mat &depthUdSideRight,
         const double &timestamp,
         string filename);
 

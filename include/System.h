@@ -120,6 +120,10 @@ class System {
         const cv::Mat &imRight,
         const cv::Mat &imSideLeft,
         const cv::Mat &imSideRight,
+        const cv::Mat &depthUdLeft,
+        const cv::Mat &depthUdRight,
+        const cv::Mat &depthUdSideLeft,
+        const cv::Mat &depthUdSideRight,
         const double &timestamp,
         const vector<IMU::Point> &vImuMeas = vector<IMU::Point>(),
         string filename = "");

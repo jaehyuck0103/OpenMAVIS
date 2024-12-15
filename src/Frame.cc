@@ -1300,8 +1300,6 @@ Frame::Frame(
       mbHasVelocity(false)
 
 {
-    imgLeft = imLeft.clone();
-    imgRight = imRight.clone();
 
     // Frame ID
     mnId = nNextId++;
@@ -1663,11 +1661,15 @@ Frame::Frame(
     const cv::Mat &imRight,
     const cv::Mat &imSideLeft,
     const cv::Mat &imSideRight,
+    const cv::Mat &depthUdLeft,
+    const cv::Mat &depthUdRight,
+    const cv::Mat &depthUdSideLeft,
+    const cv::Mat &depthUdSideRight,
     const double &timeStamp,
     ORBextractor *extractorLeft,
     ORBextractor *extractorRight,
-    ORBextractor *ORBextractorSideLeft,
-    ORBextractor *ORBextractorSideRight,
+    ORBextractor *extractorSideLeft,
+    ORBextractor *extractorSideRight,
     bool bleft,
     bool bright,
     bool bsideleft,
@@ -1690,8 +1692,8 @@ Frame::Frame(
       mpORBvocabulary(voc),
       mpORBextractorLeft(extractorLeft),
       mpORBextractorRight(extractorRight),
-      mpORBextractorSideLeft(ORBextractorSideLeft),
-      mpORBextractorSideRight(ORBextractorSideRight),
+      mpORBextractorSideLeft(extractorSideLeft),
+      mpORBextractorSideRight(extractorSideRight),
       mbEnableLeft(bleft),
       mbEnableRight(bright),
       mbEnableSideLeft(bsideleft),
@@ -1713,13 +1715,7 @@ Frame::Frame(
       mpCamera3(pCamera3),
       mpCamera4(pCamera4),
       mbHasPose(false),
-      mbHasVelocity(false)
-
-{
-    imgLeft = imLeft.clone();
-    imgRight = imRight.clone();
-    imgSideLeft = imSideLeft.clone();
-    imgSideRight = imSideRight.clone();
+      mbHasVelocity(false) {
 
     // Frame ID
     mnId = nNextId++;
@@ -1734,9 +1730,6 @@ Frame::Frame(
     mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
 
     // ORB extraction
-#ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_StartExtORB = std::chrono::steady_clock::now();
-#endif
     thread threadLeft(
         &Frame::ExtractORB,
         this,
@@ -1759,13 +1752,6 @@ Frame::Frame(
     threadRight.join();
     threadSideLeft.join();
     threadSideRight.join();
-#ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_EndExtORB = std::chrono::steady_clock::now();
-
-    mTimeORB_Ext = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-                       time_EndExtORB - time_StartExtORB)
-                       .count();
-#endif
 
     Nleft = mvKeys.size();
     Nright = mvKeysRight.size();
@@ -1773,8 +1759,9 @@ Frame::Frame(
     Nsideright = mvKeysSideRight.size();
     N = Nleft + Nright + Nsideleft + Nsideright;
 
-    if (N == 0)
+    if (N == 0) {
         return;
+    }
 
     // This is done only for the first Frame (or after a change in the calibration)
     if (mbInitialComputations) {
@@ -1811,21 +1798,9 @@ Frame::Frame(
     mRlsr = mTlsr.rotationMatrix();
     mtlsr = mTlsr.translation();
 
-#ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_StartStereoMatches =
-        std::chrono::steady_clock::now();
-#endif
     // Here we assume sideward camera has no significant overlap with stereo camera. we do not
     // peform stereo matching between sideward and forward
-    // TODO: Extend to multi-camera case
     ComputeMultiFishEyeMatches();
-#ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_EndStereoMatches = std::chrono::steady_clock::now();
-
-    mTimeStereoMatch = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-                           time_EndStereoMatches - time_StartStereoMatches)
-                           .count();
-#endif
 
     // Put all descriptors in the same matrix
     cv::Mat frontDescriptors, sideDescriptors;

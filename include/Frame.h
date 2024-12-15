@@ -427,6 +427,10 @@ class Frame {
         const cv::Mat &imRight,
         const cv::Mat &imSideLeft,
         const cv::Mat &imSideRight,
+        const cv::Mat &depthUdLeft,
+        const cv::Mat &depthUdRight,
+        const cv::Mat &depthUdSideLeft,
+        const cv::Mat &depthUdSideRight,
         const double &timeStamp,
         ORBextractor *extractorLeft,
         ORBextractor *extractorRight,
@@ -461,9 +465,6 @@ class Frame {
     bool isInFrustumChecks(MapPoint *pMP, float viewingCosLimit, int selectedCamera = 0);
 
     Eigen::Vector3f UnprojectStereoFishEye(const int &i);
-
-    cv::Mat imgLeft, imgRight;
-    cv::Mat imgSideLeft, imgSideRight;
 
     void PrintPointDistribution() {
         int left = 0, right = 0;

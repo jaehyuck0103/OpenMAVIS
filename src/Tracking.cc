@@ -12,7 +12,6 @@
 
 #include <iostream>
 
-#include <chrono>
 #include <mutex>
 
 using namespace std;
@@ -1409,55 +1408,31 @@ Sophus::SE3f Tracking::GrabImageStereo(
 }
 
 Sophus::SE3f Tracking::GrabImageMulti(
-    const cv::Mat &imRectLeft,
-    const cv::Mat &imRectRight,
-    const cv::Mat &imRectSideLeft,
-    const cv::Mat &imRectSideRight,
+    const cv::Mat &imLeft,
+    const cv::Mat &imRight,
+    const cv::Mat &imSideLeft,
+    const cv::Mat &imSideRight,
+    const cv::Mat &depthUdLeft,
+    const cv::Mat &depthUdRight,
+    const cv::Mat &depthUdSideLeft,
+    const cv::Mat &depthUdSideRight,
     const double &timestamp,
     string filename) {
 
-    mImGray = imRectLeft;
-    cv::Mat imGrayRight = imRectRight;
-    cv::Mat imGraySideLeft = imRectSideLeft;
-    cv::Mat imGraySideRight = imRectSideRight;
-    mImLeft = imRectLeft;
-    mImRight = imRectRight;
-    mImSideLeft = imRectSideLeft;
-    mImSideRight = imRectSideRight;
-
-    if (mImGray.channels() == 3) {
-        // cout << "Image with 3 channels" << endl;
-        if (mbRGB) {
-            cvtColor(mImGray, mImGray, cv::COLOR_RGB2GRAY);
-            cvtColor(imGrayRight, imGrayRight, cv::COLOR_RGB2GRAY);
-            cvtColor(imGraySideLeft, imGraySideLeft, cv::COLOR_RGB2GRAY);
-            cvtColor(imGraySideRight, imGraySideRight, cv::COLOR_RGB2GRAY);
-        } else {
-            cvtColor(mImGray, mImGray, cv::COLOR_BGR2GRAY);
-            cvtColor(imGrayRight, imGrayRight, cv::COLOR_BGR2GRAY);
-            cvtColor(imGraySideLeft, imGraySideLeft, cv::COLOR_BGR2GRAY);
-            cvtColor(imGraySideRight, imGraySideRight, cv::COLOR_BGR2GRAY);
-        }
-    } else if (mImGray.channels() == 4) {
-        // cout << "Image with 4 channels" << endl;
-        if (mbRGB) {
-            cvtColor(mImGray, mImGray, cv::COLOR_RGBA2GRAY);
-            cvtColor(imGrayRight, imGrayRight, cv::COLOR_RGBA2GRAY);
-            cvtColor(imGraySideLeft, imGraySideLeft, cv::COLOR_RGBA2GRAY);
-            cvtColor(imGraySideRight, imGraySideRight, cv::COLOR_RGBA2GRAY);
-        } else {
-            cvtColor(mImGray, mImGray, cv::COLOR_BGRA2GRAY);
-            cvtColor(imGrayRight, imGrayRight, cv::COLOR_BGRA2GRAY);
-            cvtColor(imGraySideLeft, imGraySideLeft, cv::COLOR_BGRA2GRAY);
-            cvtColor(imGraySideRight, imGraySideRight, cv::COLOR_BGRA2GRAY);
-        }
-    }
+    mImLeft = imLeft;
+    mImRight = imRight;
+    mImSideLeft = imSideLeft;
+    mImSideRight = imSideRight;
 
     mCurrentFrame = Frame(
-        mImGray,
-        imGrayRight,
-        imGraySideLeft,
-        imGraySideRight,
+        imLeft,
+        imRight,
+        imSideLeft,
+        imSideRight,
+        depthUdLeft,
+        depthUdRight,
+        depthUdSideLeft,
+        depthUdSideRight,
         timestamp,
         mpORBextractorLeft,
         mpORBextractorRight,
