@@ -1656,6 +1656,114 @@ Eigen::Vector3f Frame::UnprojectStereoFishEye(const int &i) {
     return mRwc * mvStereo3Dpoints[i] + mOw;
 }
 
+std::vector<float> GetDepthFromUndistortedPoints(
+    const std::vector<cv::KeyPoint> &keys,
+    const cv::Mat &imDepth,
+    int cam_id,
+    float bf) {
+
+    cv::Mat origK;
+    std::vector<double> dist_coeff;
+    cv::Mat newK;
+
+    if (cam_id == 0) {
+        // clang-format off
+        origK = 
+            (cv::Mat_<float>(3, 3) << 
+             351.31400364, 0,            367.85227934,
+             0,            351.49117447, 253.8402145,
+             0,            0,            1);
+        dist_coeff = {-0.03696737, -0.00891788, 0.00891297, -0.0037686};
+        newK =
+            (cv::Mat_<float>(3, 3) << 
+             269.46230292, 0,            379.82324304,
+             0,            269.59819519, 245.21372784,
+             0,            0,            1);
+        // clang-format on
+    } else if (cam_id == 1) {
+        // clang-format off
+        origK = 
+            (cv::Mat_<float>(3, 3) << 
+             352.64897944, 0,            347.81700103, 
+             0,            352.85864986, 270.58066925,
+             0,            0,            1);
+        dist_coeff = {-0.03908665, -0.00552535, 0.00439815, -0.00197013};
+        newK =
+            (cv::Mat_<float>(3, 3) << 
+             270.02303235, 0,            329.41424161,
+             0,            270.18357681, 270.88581184,
+             0,            0,            1);
+        // clang-format on
+    } else if (cam_id == 3) {
+        // clang-format off
+        origK = 
+            (cv::Mat_<float>(3, 3) << 
+             352.95148439, 0,            363.93345228,
+             0,            353.32837904, 266.14511705,
+             0,            0,            1);
+        dist_coeff = {-0.03890973, -0.00260468, 0.00046347, -0.00036698};
+        newK =
+            (cv::Mat_<float>(3, 3) << 
+             271.39851961, 0,            369.7572895,
+             0,            271.68832899, 264.14176194,
+             0,            0,            1);
+        // clang-format on
+    } else if (cam_id == 4) {
+        // clang-format off
+        origK = 
+            (cv::Mat_<float>(3, 3) << 
+             351.51321487, 0,            342.84259887,
+             0,            351.75575549, 259.91793255,
+             0,            0,            1);
+        dist_coeff = {-0.03842764, -0.00584141, 0.00345104, -0.00114635};
+        newK =
+            (cv::Mat_<float>(3, 3) << 
+             269.20586464, 0,            316.20386976,
+             0,            269.39161402, 254.46723719,
+             0,            0,            1);
+        // clang-format on
+    } else {
+        std::cout << "not supprted cam_id" << std::endl;
+        exit(1);
+    }
+
+    std::vector<cv::Point2f> points2;
+    if (keys.size() > 0) {
+        // cv::Point2f 벡터로 변환
+        std::vector<cv::Point2f> points;
+        for (const auto &kp : keys) {
+            points.push_back(kp.pt); // KeyPoint의 pt는 cv::Point2f 타입
+        }
+        cv::fisheye::undistortPoints(points, points2, origK, dist_coeff, cv::noArray(), newK);
+    }
+
+    std::vector<float> d_vals;
+    d_vals.reserve(keys.size());
+    for (const auto &p : points2) {
+        int x = round(p.x);
+        int y = round(p.y);
+
+        if (x < 0 || x >= imDepth.cols || y < 0 || y >= imDepth.rows) {
+            d_vals.push_back(0);
+        } else {
+            d_vals.push_back(imDepth.at<float>(y, x));
+        }
+    }
+
+    std::vector<float> u_right;
+    u_right.reserve(keys.size());
+    for (int i = 0; i < keys.size(); ++i) {
+        float d = d_vals[i];
+        if (d > 0) {
+            u_right.push_back(keys[i].pt.x - bf / d);
+        } else {
+            u_right.push_back(-1);
+        }
+    }
+
+    return u_right;
+}
+
 Frame::Frame(
     const cv::Mat &imLeft,
     const cv::Mat &imRight,
@@ -1763,6 +1871,27 @@ Frame::Frame(
         return;
     }
 
+    {
+        mvuRight.clear();
+        std::vector<float> dvals_left = GetDepthFromUndistortedPoints(mvKeys, depthUdLeft, 1, mbf);
+        std::vector<float> dvals_right =
+            GetDepthFromUndistortedPoints(mvKeysRight, depthUdRight, 0, mbf);
+        std::vector<float> dvals_sideleft =
+            GetDepthFromUndistortedPoints(mvKeysSideLeft, depthUdSideLeft, 4, mbf);
+        std::vector<float> dvals_sideright =
+            GetDepthFromUndistortedPoints(mvKeysSideRight, depthUdSideRight, 3, mbf);
+
+        mvuRight.insert(mvuRight.end(), dvals_left.begin(), dvals_left.end());
+        mvuRight.insert(mvuRight.end(), dvals_right.begin(), dvals_right.end());
+        mvuRight.insert(mvuRight.end(), dvals_sideleft.begin(), dvals_sideleft.end());
+        mvuRight.insert(mvuRight.end(), dvals_sideright.begin(), dvals_sideright.end());
+
+        if (mvuRight.size() != N) {
+            std::cout << "mvuRight size miss" << std::endl;
+            exit(1);
+        }
+    }
+
     // This is done only for the first Frame (or after a change in the calibration)
     if (mbInitialComputations) {
         ComputeImageBounds(imLeft);
@@ -1817,4 +1946,5 @@ Frame::Frame(
 
     UndistortKeyPoints();
 }
+
 } // namespace ORB_SLAM3
