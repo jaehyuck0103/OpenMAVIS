@@ -274,6 +274,7 @@ class Frame {
     std::vector<MapPoint *> mvpMapPoints;
     // "Monocular" keypoints have a negative value.
     std::vector<float> mvuRight;
+    std::vector<float> mvuRight2;
     std::vector<float> mvDepth;
 
     // Bag of Words Vector structures.

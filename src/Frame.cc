@@ -1754,7 +1754,7 @@ std::vector<float> GetDepthFromUndistortedPoints(
     u_right.reserve(keys.size());
     for (int i = 0; i < keys.size(); ++i) {
         float d = d_vals[i];
-        if (d > 0) {
+        if (d > 0 && d <= 20) { // 20m 이상은 그냥 버림..
             u_right.push_back(keys[i].pt.x - bf / d);
         } else {
             u_right.push_back(-1);
@@ -1871,27 +1871,6 @@ Frame::Frame(
         return;
     }
 
-    {
-        mvuRight.clear();
-        std::vector<float> dvals_left = GetDepthFromUndistortedPoints(mvKeys, depthUdLeft, 1, mbf);
-        std::vector<float> dvals_right =
-            GetDepthFromUndistortedPoints(mvKeysRight, depthUdRight, 0, mbf);
-        std::vector<float> dvals_sideleft =
-            GetDepthFromUndistortedPoints(mvKeysSideLeft, depthUdSideLeft, 4, mbf);
-        std::vector<float> dvals_sideright =
-            GetDepthFromUndistortedPoints(mvKeysSideRight, depthUdSideRight, 3, mbf);
-
-        mvuRight.insert(mvuRight.end(), dvals_left.begin(), dvals_left.end());
-        mvuRight.insert(mvuRight.end(), dvals_right.begin(), dvals_right.end());
-        mvuRight.insert(mvuRight.end(), dvals_sideleft.begin(), dvals_sideleft.end());
-        mvuRight.insert(mvuRight.end(), dvals_sideright.begin(), dvals_sideright.end());
-
-        if (mvuRight.size() != N) {
-            std::cout << "mvuRight size miss" << std::endl;
-            exit(1);
-        }
-    }
-
     // This is done only for the first Frame (or after a change in the calibration)
     if (mbInitialComputations) {
         ComputeImageBounds(imLeft);
@@ -1930,6 +1909,28 @@ Frame::Frame(
     // Here we assume sideward camera has no significant overlap with stereo camera. we do not
     // peform stereo matching between sideward and forward
     ComputeMultiFishEyeMatches();
+
+    // Get mvuRight
+    {
+        mvuRight.clear();
+        std::vector<float> dvals_left = GetDepthFromUndistortedPoints(mvKeys, depthUdLeft, 1, mbf);
+        std::vector<float> dvals_right =
+            GetDepthFromUndistortedPoints(mvKeysRight, depthUdRight, 0, mbf);
+        std::vector<float> dvals_sideleft =
+            GetDepthFromUndistortedPoints(mvKeysSideLeft, depthUdSideLeft, 4, mbf);
+        std::vector<float> dvals_sideright =
+            GetDepthFromUndistortedPoints(mvKeysSideRight, depthUdSideRight, 3, mbf);
+
+        mvuRight.insert(mvuRight.end(), dvals_left.begin(), dvals_left.end());
+        mvuRight.insert(mvuRight.end(), dvals_right.begin(), dvals_right.end());
+        mvuRight.insert(mvuRight.end(), dvals_sideleft.begin(), dvals_sideleft.end());
+        mvuRight.insert(mvuRight.end(), dvals_sideright.begin(), dvals_sideright.end());
+
+        if (mvuRight.size() != N) {
+            std::cout << "mvuRight size miss" << std::endl;
+            exit(1);
+        }
+    }
 
     // Put all descriptors in the same matrix
     cv::Mat frontDescriptors, sideDescriptors;
